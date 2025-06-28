@@ -1,10 +1,37 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { Terminal, Code, Zap } from "lucide-react";
+import { Terminal, Code, Zap, Shield, Lock, Eye } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [activeDialog, setActiveDialog] = useState<string | null>(null);
+
+  const StatusDialog = ({ 
+    trigger, 
+    title, 
+    children, 
+    dialogKey 
+  }: { 
+    trigger: React.ReactNode; 
+    title: string; 
+    children: React.ReactNode;
+    dialogKey: string;
+  }) => (
+    <Dialog open={activeDialog === dialogKey} onOpenChange={(open) => setActiveDialog(open ? dialogKey : null)}>
+      <DialogTrigger asChild>
+        {trigger}
+      </DialogTrigger>
+      <DialogContent className="bg-black border-green-400 text-green-400 font-mono max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-green-400 font-mono text-lg">{title}</DialogTitle>
+        </DialogHeader>
+        {children}
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="min-h-screen bg-black text-green-400 relative overflow-hidden">
@@ -35,6 +62,15 @@ const Index = () => {
           </p>
         </div>
 
+        {/* Description */}
+        <div className="text-center mb-8 max-w-2xl">
+          <p className="text-gray-400 font-mono text-sm leading-relaxed">
+            Welcome to the most secure underground script repository. All scripts are tested, 
+            verified and anonymously distributed through encrypted channels. Your identity 
+            remains protected through our advanced tunneling protocols.
+          </p>
+        </div>
+
         {/* Main action button */}
         <div className="text-center">
           <Button
@@ -46,20 +82,106 @@ const Index = () => {
           </Button>
         </div>
 
-        {/* Status indicators */}
+        {/* Interactive status indicators */}
         <div className="mt-16 flex space-x-8 text-sm font-mono">
-          <div className="flex items-center text-green-400">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
-            SECURE CONNECTION
-          </div>
-          <div className="flex items-center text-cyan-400">
-            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse mr-2"></div>
-            ENCRYPTED TUNNEL
-          </div>
-          <div className="flex items-center text-yellow-400">
-            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse mr-2"></div>
-            ANONYMOUS MODE
-          </div>
+          <StatusDialog
+            dialogKey="secure"
+            title="CONNECTION STATUS"
+            trigger={
+              <button className="flex items-center text-green-400 hover:text-green-300 transition-colors cursor-pointer group">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2 group-hover:bg-green-300"></div>
+                SECURE CONNECTION
+              </button>
+            }
+          >
+            <div className="space-y-4">
+              <div className="flex items-center text-green-400">
+                <Shield className="w-5 h-5 mr-2" />
+                <span>TLS 1.3 ENCRYPTION ACTIVE</span>
+              </div>
+              <div className="text-cyan-400 text-xs">
+                {">"} Certificate: VALID (SHA-256)
+                <br />
+                {">"} Protocol: HTTPS/2.0
+                <br />
+                {">"} Cipher: AES-256-GCM
+                <br />
+                {">"} Key Exchange: ECDHE-RSA
+              </div>
+              <div className="text-green-500 text-xs animate-pulse">
+                CONNECTION IS SECURE ✓
+              </div>
+            </div>
+          </StatusDialog>
+
+          <StatusDialog
+            dialogKey="encrypted"
+            title="TUNNEL STATUS"
+            trigger={
+              <button className="flex items-center text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer group">
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse mr-2 group-hover:bg-cyan-300"></div>
+                ENCRYPTED TUNNEL
+              </button>
+            }
+          >
+            <div className="space-y-4">
+              <div className="flex items-center text-cyan-400">
+                <Lock className="w-5 h-5 mr-2" />
+                <span>END-TO-END ENCRYPTION</span>
+              </div>
+              <div className="text-green-400 text-xs">
+                {">"} Tunnel Type: SECURE_PROXY
+                <br />
+                {">"} Encryption: AES-256-CBC
+                <br />
+                {">"} Routing: MULTI-HOP VPN
+                <br />
+                {">"} DNS: ENCRYPTED (DoH)
+              </div>
+              <div className="text-cyan-500 text-xs animate-pulse">
+                CONNECTION IS ENCRYPTED ✓
+              </div>
+            </div>
+          </StatusDialog>
+
+          <StatusDialog
+            dialogKey="anonymous"
+            title="STEALTH MODE"
+            trigger={
+              <button className="flex items-center text-yellow-400 hover:text-yellow-300 transition-colors cursor-pointer group">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse mr-2 group-hover:bg-yellow-300"></div>
+                ANONYMOUS MODE
+              </button>
+            }
+          >
+            <div className="space-y-4">
+              <div className="flex items-center text-yellow-400">
+                <Eye className="w-5 h-5 mr-2" />
+                <span>STEALTH PROTOCOLS ACTIVE</span>
+              </div>
+              <div className="text-red-400 text-xs">
+                {">"} IP Address: MASKED
+                <br />
+                {">"} Browser Fingerprint: SPOOFED
+                <br />
+                {">"} DNS Queries: RANDOMIZED
+                <br />
+                {">"} Traffic Pattern: OBFUSCATED
+              </div>
+              <div className="text-yellow-500 text-xs animate-pulse">
+                SCRIPT IS UNDETECTABLE ✓
+              </div>
+            </div>
+          </StatusDialog>
+        </div>
+
+        {/* Policy Notice */}
+        <div className="mt-12 text-center max-w-xl">
+          <p className="text-gray-600 font-mono text-xs leading-relaxed">
+            By accessing this repository, you agree to use all scripts for educational 
+            and authorized testing purposes only. Users are responsible for compliance 
+            with local laws and regulations. Unauthorized usage is strictly prohibited.
+          </p>
         </div>
       </div>
 
@@ -69,6 +191,24 @@ const Index = () => {
       </div>
       <div className="absolute bottom-20 right-10 text-cyan-400 font-mono text-xs opacity-50 animate-pulse">
         {">"} connection_secure=true
+      </div>
+
+      {/* Footer */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-green-400/30 bg-black/80 backdrop-blur">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center text-xs font-mono">
+            <div className="text-green-400 mb-2 md:mb-0">
+              INCOGNITO © 2025 - UNDERGROUND SCRIPT REPOSITORY
+            </div>
+            <div className="flex space-x-4 text-gray-500">
+              <span>PRIVACY POLICY</span>
+              <span>•</span>
+              <span>TERMS OF SERVICE</span>
+              <span>•</span>
+              <span>CONTACT</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
