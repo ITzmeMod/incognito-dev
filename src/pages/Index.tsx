@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -7,12 +6,14 @@ import { StatusDialog } from "@/components/StatusDialog";
 import { RealTimeStats } from "@/components/RealTimeStats";
 import { FloatingElements } from "@/components/FloatingElements";
 import { Footer } from "@/components/Footer";
+import { IntroScreen } from "@/components/IntroScreen";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [showIntro, setShowIntro] = useState(true);
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [connectionInfo, setConnectionInfo] = useState<any>(null);
-  const [activeUsers, setActiveUsers] = useState(42); // Real-time active users simulation
+  const [activeUsers, setActiveUsers] = useState(42);
   const [realTimeClicks, setRealTimeClicks] = useState(1337);
 
   useEffect(() => {
@@ -44,6 +45,10 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (showIntro) {
+    return <IntroScreen onComplete={() => setShowIntro(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-green-400 relative overflow-hidden">
@@ -93,7 +98,7 @@ const Index = () => {
             className="bg-gradient-to-r from-green-600 to-cyan-600 hover:from-green-500 hover:to-cyan-500 text-black font-mono text-xl px-12 py-6 rounded-lg border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70 transition-all duration-300 transform hover:scale-105"
           >
             <Code className="w-6 h-6 mr-3" />
-            GET THE SCRIPT!
+            Get the Script!
           </Button>
         </div>
 
