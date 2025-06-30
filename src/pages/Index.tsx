@@ -1,15 +1,19 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Terminal, Code } from "lucide-react";
+import { Terminal, Code, Shield } from "lucide-react";
 import { StatusDialog } from "@/components/StatusDialog";
 import { RealTimeStats } from "@/components/RealTimeStats";
 import { FloatingElements } from "@/components/FloatingElements";
 import { Footer } from "@/components/Footer";
 import { IntroScreen } from "@/components/IntroScreen";
+import { AuthButton } from "@/components/AuthButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [showIntro, setShowIntro] = useState(true);
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [connectionInfo, setConnectionInfo] = useState<any>(null);
@@ -21,7 +25,7 @@ const Index = () => {
     const detectConnection = () => {
       const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
       const isSecure = location.protocol === 'https:';
-      const hasVPN = Math.random() > 0.7; // VPN detection simulation - replace with real API
+      const hasVPN = Math.random() > 0.7;
       
       setConnectionInfo({
         isSecure,
@@ -37,7 +41,6 @@ const Index = () => {
 
     detectConnection();
     
-    // Simulate real-time updates
     const interval = setInterval(() => {
       setActiveUsers(prev => prev + Math.floor(Math.random() * 3) - 1);
       setRealTimeClicks(prev => prev + Math.floor(Math.random() * 5));
@@ -52,6 +55,24 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-black text-green-400 relative overflow-hidden">
+      {/* Auth Button - Fixed position */}
+      <div className="fixed top-4 right-4 z-50">
+        <AuthButton />
+      </div>
+
+      {/* Admin Dashboard Link - Only show for admins */}
+      {isAdmin && (
+        <div className="fixed top-4 left-4 z-50">
+          <Button
+            onClick={() => navigate('/admin')}
+            className="bg-red-600 hover:bg-red-500 text-white font-mono"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Admin Dashboard
+          </Button>
+        </div>
+      )}
+
       {/* Real-time stats */}
       <RealTimeStats activeUsers={activeUsers} realTimeClicks={realTimeClicks} />
 
@@ -72,7 +93,6 @@ const Index = () => {
           <div className="h-1 w-64 mx-auto bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse"></div>
         </div>
 
-        {/* Subtitle */}
         <div className="text-center mb-12">
           <p className="text-xl md:text-2xl text-cyan-300 font-mono mb-4">
             {">"} Underground Script Repository
@@ -82,7 +102,6 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Description */}
         <div className="text-center mb-8 max-w-2xl">
           <p className="text-gray-400 font-mono text-sm leading-relaxed">
             Welcome to the most secure underground script repository. All scripts are tested, 
@@ -91,7 +110,6 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Main action button */}
         <div className="text-center">
           <Button
             onClick={() => navigate('/scripts')}
@@ -102,7 +120,6 @@ const Index = () => {
           </Button>
         </div>
 
-        {/* Enhanced interactive status indicators with real connection detection */}
         <div className="mt-16 flex space-x-8 text-sm font-mono">
           <StatusDialog
             dialogKey="secure"
@@ -147,7 +164,6 @@ const Index = () => {
           />
         </div>
 
-        {/* Policy Notice with enhanced content */}
         <div className="mt-12 text-center max-w-xl">
           <p className="text-gray-600 font-mono text-xs leading-relaxed mb-4">
             By accessing this repository, you agree to use all scripts for educational 
@@ -161,10 +177,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Floating elements */}
       <FloatingElements connectionInfo={connectionInfo} />
-
-      {/* Enhanced Footer with Policy Dialogs */}
       <Footer activeDialog={activeDialog} setActiveDialog={setActiveDialog} />
     </div>
   );

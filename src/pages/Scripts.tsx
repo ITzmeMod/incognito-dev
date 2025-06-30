@@ -1,234 +1,246 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { 
-  Search, 
-  Calendar, 
-  ExternalLink, 
-  Play, 
-  ArrowLeft,
-  Download,
-  Eye,
-  Shield,
-  AlertTriangle,
-  CheckCircle
-} from "lucide-react";
+import { ArrowLeft, Search, Download, Youtube, Eye, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { AuthButton } from "@/components/AuthButton";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Script {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  youtube_link: string;
+  download_link: string;
+  status: string;
+  click_count: number;
+}
 
 const Scripts = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const { toast } = useToast();
+  const [scripts, setScripts] = useState<Script[]>([]);
+  const [filteredScripts, setFilteredScripts] = useState<Script[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [loading, setLoading] = useState(true);
 
-  // Mock scripts data with real-time click tracking
-  const scripts = [
-    {
-      id: "1",
-      title: "Advanced Network Scanner",
-      description: "Comprehensive network discovery and vulnerability assessment tool with stealth capabilities and custom payload generation.",
-      uploadDate: "2025-01-15",
-      status: "Updated",
-      image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400&h=300&fit=crop",
-      youtubeLink: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      downloadLink: "https://linkvertise.com/12345/advanced-scanner",
-      clickCount: 2847
-    },
-    {
-      id: "2", 
-      title: "SQL Injection Toolkit",
-      description: "Advanced SQL injection testing framework with automated detection and exploitation capabilities for ethical penetration testing.",
-      uploadDate: "2025-01-12",
-      status: "Working",
-      image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=300&fit=crop",
-      youtubeLink: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      downloadLink: "https://work.ink/sql-toolkit-secure",
-      clickCount: 1923
-    },
-    {
-      id: "3",
-      title: "Web Application Fuzzer",
-      description: "Intelligent web application security testing tool with machine learning-based payload optimization and comprehensive reporting.",
-      uploadDate: "2025-01-08",
-      status: "Outdated",
-      image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
-      youtubeLink: null,
-      downloadLink: "https://linkvertise.com/54321/web-fuzzer",
-      clickCount: 756
-    },
-    {
-      id: "4",
-      title: "Wireless Security Auditor", 
-      description: "Complete wireless network security assessment suite with support for WPA3, enterprise networks, and IoT device testing.",
-      uploadDate: "2025-01-20",
-      status: "Updated",
-      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=300&fit=crop",
-      youtubeLink: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      downloadLink: "https://work.ink/wireless-auditor",
-      clickCount: 3421
-    },
-    {
-      id: "5",
-      title: "Social Engineering Toolkit",
-      description: "Comprehensive social engineering framework for security awareness training and authorized penetration testing scenarios.",
-      uploadDate: "2025-01-18",
-      status: "Working",
-      image: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?w=400&h=300&fit=crop",
-      youtubeLink: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      downloadLink: "https://linkvertise.com/67890/social-toolkit",
-      clickCount: 1567
-    },
-    {
-      id: "6",
-      title: "Forensic Data Recovery",
-      description: "Advanced digital forensics tool for data recovery, analysis, and evidence collection with chain of custody documentation.",
-      uploadDate: "2025-01-05",
-      status: "Updated",
-      image: "https://images.unsplash.com/photo-1551808525-51a94da548ce?w=400&h=300&fit=crop",
-      youtubeLink: null,
-      downloadLink: "https://work.ink/forensic-recovery",
-      clickCount: 892
-    }
-  ];
+  useEffect(() => {
+    fetchScripts();
+  }, []);
 
-  const filteredScripts = scripts.filter(script =>
-    script.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    script.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchScripts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('scripts')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Updated": return "bg-green-500";
-      case "Working": return "bg-blue-500"; 
-      case "Outdated": return "bg-red-500";
-      default: return "bg-gray-500";
+      if (error) throw error;
+      
+      setScripts(data || []);
+      setFilteredScripts(data || []);
+    } catch (error) {
+      console.error('Error fetching scripts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load scripts",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Updated": return <CheckCircle className="w-4 h-4" />;
-      case "Working": return <Shield className="w-4 h-4" />;
-      case "Outdated": return <AlertTriangle className="w-4 h-4" />;
-      default: return <Eye className="w-4 h-4" />;
+  const handleDownload = async (script: Script) => {
+    try {
+      // Increment click count
+      const { error } = await supabase
+        .from('scripts')
+        .update({ click_count: script.click_count + 1 })
+        .eq('id', script.id);
+
+      if (error) throw error;
+
+      // Open download link
+      window.open(script.download_link, '_blank');
+      
+      // Update local state
+      const updatedScripts = scripts.map(s => 
+        s.id === script.id ? { ...s, click_count: s.click_count + 1 } : s
+      );
+      setScripts(updatedScripts);
+      setFilteredScripts(updatedScripts.filter(filterScript));
+
+      toast({ 
+        title: "Download Started", 
+        description: "Script download initiated successfully" 
+      });
+    } catch (error) {
+      console.error('Error updating click count:', error);
+      // Still open download link even if count update fails
+      window.open(script.download_link, '_blank');
     }
   };
 
-  const handleScriptClick = (scriptId: string) => {
-    navigate(`/scripts/details/${scriptId}`);
+  const filterScript = (script: Script) => {
+    const matchesSearch = script.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         script.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === "All" || script.status === selectedStatus;
+    return matchesSearch && matchesStatus;
   };
+
+  useEffect(() => {
+    setFilteredScripts(scripts.filter(filterScript));
+  }, [searchTerm, selectedStatus, scripts]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-green-400 flex items-center justify-center">
+        <div className="text-xl font-mono animate-pulse">Loading underground arsenal...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-black text-green-400">
-      {/* Header */}
-      <div className="border-b border-green-400/30 bg-black/80 backdrop-blur">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/')}
-              className="border-green-400 text-green-400 hover:bg-green-400/20 font-mono"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              BACK TO HOME
-            </Button>
-            <div className="text-center">
-              <h1 className="text-4xl font-mono font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">
-                SCRIPT REPOSITORY
-              </h1>
-              <p className="text-cyan-300 font-mono mt-2">{">"} CLASSIFIED TOOLS & EXPLOITS</p>
-            </div>
-            <div className="w-32"></div>
-          </div>
-          
-          {/* Search */}
-          <div className="relative max-w-md mx-auto">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Search scripts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-900 border-green-400/30 text-green-400 placeholder-gray-500 font-mono"
-            />
-          </div>
-        </div>
+    <div className="min-h-screen bg-black text-green-400 relative">
+      {/* Auth Button */}
+      <div className="fixed top-4 right-4 z-50">
+        <AuthButton />
       </div>
 
-      {/* Scripts Grid */}
-      <div className="container mx-auto px-4 py-8">
+      {/* Admin Dashboard Link */}
+      {isAdmin && (
+        <div className="fixed top-4 left-4 z-50">
+          <Button
+            onClick={() => navigate('/admin')}
+            className="bg-red-600 hover:bg-red-500 text-white font-mono"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Admin
+          </Button>
+        </div>
+      )}
+
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDBmZjAwIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMiIvPgogICAgPC9wYXR0ZXJuPgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIiAvPgo8L3N2Zz4=')] opacity-20"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <Button
+              onClick={() => navigate('/')}
+              variant="outline"
+              className="mr-4 border-green-400 text-green-400 hover:bg-green-400 hover:text-black"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+            <h1 className="text-4xl font-mono font-bold text-red-400">
+              SCRIPT REPOSITORY
+            </h1>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-400 w-4 h-4" />
+            <Input
+              placeholder="Search scripts by name or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-gray-900 border-green-400 text-green-400 placeholder-gray-500"
+            />
+          </div>
+          
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-2 bg-gray-900 border border-green-400 text-green-400 rounded-md font-mono"
+          >
+            <option value="All">All Status</option>
+            <option value="Working">Working</option>
+            <option value="Updated">Updated</option>
+            <option value="Outdated">Outdated</option>
+          </select>
+        </div>
+
+        {/* Scripts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredScripts.map((script) => (
-            <Card 
-              key={script.id} 
-              className="bg-gray-900 border-green-400/30 hover:border-green-400/60 transition-colors cursor-pointer group"
-              onClick={() => handleScriptClick(script.id)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-green-400 font-mono text-lg group-hover:text-cyan-400 transition-colors">
+            <Card key={script.id} className="bg-gray-900 border-green-400 hover:border-cyan-400 transition-colors">
+              <CardHeader>
+                <div className="aspect-video bg-gray-800 rounded-lg mb-4 overflow-hidden">
+                  <img
+                    src={script.image_url}
+                    alt={script.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop';
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-green-400 font-mono text-lg">
                     {script.title}
                   </CardTitle>
-                  <Badge className={`${getStatusColor(script.status)} text-white font-mono text-xs`}>
-                    {getStatusIcon(script.status)}
-                    <span className="ml-1">{script.status}</span>
+                  <Badge 
+                    className={`font-mono text-xs ${
+                      script.status === 'Working' ? 'bg-green-600 text-black' :
+                      script.status === 'Updated' ? 'bg-blue-600 text-white' :
+                      'bg-red-600 text-white'
+                    }`}
+                  >
+                    {script.status}
                   </Badge>
                 </div>
               </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {/* Image */}
-                {script.image && (
-                  <div className="aspect-video rounded-lg overflow-hidden border border-green-400/20">
-                    <img
-                      src={script.image}
-                      alt={script.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                )}
-                
-                {/* Description */}
-                <p className="text-gray-300 font-mono text-sm leading-relaxed line-clamp-3">
+              <CardContent>
+                <CardDescription className="text-gray-400 mb-4 font-mono text-sm">
                   {script.description}
-                </p>
+                </CardDescription>
                 
-                {/* Stats and Date */}
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <div className="flex items-center text-gray-400">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {script.uploadDate}
-                  </div>
-                  <div className="flex items-center text-cyan-400">
-                    <Download className="w-3 h-3 mr-1" />
-                    {script.clickCount.toLocaleString()} clicks
-                  </div>
+                <div className="flex items-center text-yellow-400 mb-4 font-mono text-sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  {script.click_count.toLocaleString()} downloads
                 </div>
-                
-                {/* Action Links */}
-                <div className="flex items-center justify-between pt-2 border-t border-green-400/20">
-                  {script.youtubeLink && (
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleDownload(script)}
+                    className="flex-1 bg-green-600 hover:bg-green-500 text-black font-mono"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                  
+                  {script.youtube_link && (
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 font-mono"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(script.youtubeLink, '_blank');
-                      }}
+                      onClick={() => window.open(script.youtube_link, '_blank')}
+                      variant="outline"
+                      className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                     >
-                      <Play className="w-4 h-4 mr-1" />
-                      VIDEO
+                      <Youtube className="w-4 h-4" />
                     </Button>
                   )}
                   
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10 font-mono ml-auto"
+                    onClick={() => navigate(`/scripts/details/${script.id}`)}
+                    variant="outline"
+                    className="border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-black"
                   >
-                    <Eye className="w-4 h-4 mr-1" />
-                    VIEW DETAILS
+                    <Eye className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -238,7 +250,8 @@ const Scripts = () => {
         
         {filteredScripts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-400 font-mono text-lg">No scripts found matching your search.</p>
+            <p className="text-red-400 font-mono text-xl mb-2">No scripts found</p>
+            <p className="text-gray-400 font-mono">Try adjusting your search criteria</p>
           </div>
         )}
       </div>
